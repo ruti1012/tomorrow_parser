@@ -36,7 +36,6 @@ def text_to_arr(file_path:str):
             text[i-1] = text[i]
             text[i] = tmp
 
-
     # get all dates from list
     possible_dates = ["MONTAG,", "DIENSTAG,", "MITTWOCH,","DONNERSTAG,","FREITAG,","SAMSTAG,","SONNTAG,"]
     dates = [text.index(item) for item in text if any(dates in item for dates in possible_dates)]
@@ -53,7 +52,14 @@ def text_to_arr(file_path:str):
         demo_list = []
         for i in range(len(s)):
             if s[i] == "Überweisung":
-                demo_list.append(s[i-2:i+3])
+                if "€" not in s[i-1]:
+                    tmp_list = []
+                    tmp_list.append(s[i-1])
+                    tmp_list.append(s[i+3])
+                    tmp_list.extend(s[i:i+3])
+                    demo_list.append(tmp_list)
+                else:
+                    demo_list.append(s[i-2:i+3])
             if s[i] == "Kartenzahlung":
                 demo_list.append(s[i-2:i+1])
         text_dict[key] = demo_list
