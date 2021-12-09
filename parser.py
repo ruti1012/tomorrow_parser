@@ -5,18 +5,20 @@ import glob
 
 
 def text_to_arr(file_path:str):
+    print(file_path)
     text = textract.process(file_path).decode().split('\n')
 
     # scrap front part
     text = text[12:]
 
     # scrap zusammenfassung
-    text = text[:-36]
+    text = text[:text.index('\x0cZUSAMMENFASSUNG')]
 
     # remove empty strings
     text = list(filter(None, text))
     text = list(filter(None, text))
 
+    num_of_bookings = ' '.join(text).count("€")
     # remove whitespace
     for i in range(len(text)):
         if text[i].startswith("\x0c"):
@@ -43,15 +45,22 @@ def text_to_arr(file_path:str):
     text_dict = {}
 
     # create dict by dates
-    for i in range(len(dates)-1):
-        text_dict[text[dates[i]]] = text[dates[i]+1:dates[i+1]]
+    for i in range(len(dates)):
+        end = 0
+        print(i)
+        if i == len(dates)-1:
+            end = len(text)
+        else:
+            end = dates[i+1]
+
+        text_dict[text[dates[i]]] = text[dates[i]+1:end]
 
     # split text by every transaction
     for key in text_dict.keys():
         s = text_dict[key]
         demo_list = []
         for i in range(len(s)):
-            if s[i] == "Überweisung":
+            if s[i] == "Überweisung" or s[i] == "Lastschrift":
                 if "€" not in s[i-1]:
                     tmp_list = []
                     tmp_list.append(s[i-1])
@@ -63,7 +72,7 @@ def text_to_arr(file_path:str):
             if s[i] == "Kartenzahlung":
                 demo_list.append(s[i-2:i+1])
         text_dict[key] = demo_list
-
+        
     # parse string date
     correct_date_dict = {}
     for key in text_dict.keys():
@@ -80,6 +89,8 @@ def text_to_arr(file_path:str):
             transaction_copy += [None] * (6 - len(transaction_copy))
             final_list.append(transaction_copy)
 
+    print(num_of_bookings, len(final_list))
+    assert num_of_bookings == len(final_list)
     # convert list to dataframe
     column_names = ["date", "merchant", "value", "type", "IBANBIC", "description"]
     df = pd.DataFrame(final_list, columns=column_names)
